@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Courses - NYU Course Search</title>
+    <meta name="description" content="Your saved and upvoted NYU courses.">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+
+<body class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="header sticky top-0 z-50 py-4">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <a href="/" class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-nyu-gradient rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-xl">N</span>
+                </div>
+                <h1 class="text-2xl font-bold text-nyu-purple">NYU Course Search</h1>
+            </a>
+            <nav class="flex items-center gap-4">
+                {% if user %}
+                {% if user.is_admin %}
+                <a href="/admin" class="text-sm text-gray-600 hover:text-nyu-purple transition-colors">Admin</a>
+                {% endif %}
+                <a href="/my-courses" class="text-sm font-semibold text-nyu-purple">My Courses</a>
+                <span class="text-sm text-gray-600">{{ user.email }}</span>
+                <a href="/auth/logout" class="btn-primary text-sm">Logout</a>
+                {% else %}
+                <a href="/" class="btn-primary text-sm">Login</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">My Courses</h2>
+
+        <!-- Saved Courses Section -->
+        <section class="mb-12">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-nyu-purple" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
+                </svg>
+                Saved Courses
+            </h3>
+            {% if saved_courses %}
+            <div class="grid gap-4">
+                {% for sc in saved_courses %}
+                <a href="/course/{{ sc.course.id }}" class="card p-4 hover:shadow-lg transition-shadow block">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="badge badge-purple text-xs">{{ sc.course.course_code }}</span>
+                            <h4 class="font-semibold text-gray-900 mt-1">{{ sc.course.title }}</h4>
+                            <p class="text-sm text-gray-600 mt-1 line-clamp-2">{{ sc.course.description[:150] }}...</p>
+                        </div>
+                        <span class="text-xs text-gray-400">Saved {{ sc.created_at.strftime('%b %d') }}</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-500 bg-white rounded-lg border border-gray-200">
+                <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                </svg>
+                <p>No saved courses yet.</p>
+                <a href="/" class="text-nyu-purple hover:underline text-sm">Search for courses →</a>
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- Upvoted Courses Section -->
+        <section>
+            <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z"
+                        clip-rule="evenodd"></path>
+                </svg>
+                Upvoted Courses
+            </h3>
+            {% if upvoted_courses %}
+            <div class="grid gap-4">
+                {% for uf in upvoted_courses %}
+                <a href="/course/{{ uf.course.id }}" class="card p-4 hover:shadow-lg transition-shadow block">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="badge badge-purple text-xs">{{ uf.course.course_code }}</span>
+                            <h4 class="font-semibold text-gray-900 mt-1">{{ uf.course.title }}</h4>
+                            <p class="text-sm text-gray-600 mt-1 line-clamp-2">{{ uf.course.description[:150] }}...</p>
+                        </div>
+                        <span class="text-xs text-gray-400">Upvoted {{ uf.created_at.strftime('%b %d') }}</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-500 bg-white rounded-lg border border-gray-200">
+                <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5">
+                    </path>
+                </svg>
+                <p>No upvoted courses yet.</p>
+                <a href="/" class="text-nyu-purple hover:underline text-sm">Search for courses →</a>
+            </div>
+            {% endif %}
+        </section>
+    </main>
+</body>
+
+</html>

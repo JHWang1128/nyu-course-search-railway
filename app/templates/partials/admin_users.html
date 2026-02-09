@@ -1,0 +1,32 @@
+{% if users %}
+{% for user in users %}
+<tr>
+    <td class="px-6 py-4 whitespace-nowrap">
+        <span class="text-sm text-gray-900">{{ user.email }}</span>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap">
+        {% if user.is_verified %}
+        <span
+            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Yes</span>
+        {% else %}
+        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">No</span>
+        {% endif %}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap">
+        {% if user.is_admin %}
+        <span
+            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">Admin</span>
+        {% else %}
+        <span class="text-sm text-gray-500">-</span>
+        {% endif %}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '-' }}
+    </td>
+</tr>
+{% endfor %}
+{% else %}
+<tr>
+    <td colspan="4" class="px-6 py-4 text-center text-gray-500">No users yet</td>
+</tr>
+{% endif %}

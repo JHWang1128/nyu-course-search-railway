@@ -4,6 +4,7 @@
 
 - Railway Account (https://railway.app)
 - GitHub Repository linked to Railway
+- Resend Account (https://resend.com) for email OTP
 
 ## Deployment Steps
 
@@ -36,8 +37,8 @@ In your app service settings, add:
 | Variable | Value |
 |----------|-------|
 | `SECRET_KEY` | Generate with `openssl rand -hex 32` |
-| `ADMIN_EMAILS` | `your-email@nyu.edu` |
-| `RESEND_API_KEY` | Your Resend API key (for production emails) |
+| `ADMIN_EMAILS` | `your-email@nyu.edu` (comma-separated for multiple) |
+| `RESEND_API_KEY` | Your Resend API key (required for email login) |
 
 > Note: `DATABASE_URL` is automatically set by Railway PostgreSQL
 
@@ -70,7 +71,7 @@ Using Railway CLI:
 railway run python -m scripts.generate_embeddings
 ```
 
-Or via Railway shell (takes 30-60 minutes for all courses).
+Takes 30-60 minutes for all courses.
 
 ### Step 3: Create Vector Index
 
@@ -79,7 +80,28 @@ In Railway PostgreSQL Query tab:
 CREATE INDEX courses_embedding_idx ON courses USING hnsw (embedding vector_cosine_ops);
 ```
 
-This dramatically improves search speed (from ~3s to ~0.7s).
+This improves search speed from ~3s to ~0.7s.
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Semantic Search** | Natural language course search using Nomic embeddings + pgvector |
+| **Live Classes** | Real-time class schedules from bulletins.nyu.edu API |
+| **Authentication** | Email OTP via Resend, restricted to `@nyu.edu` |
+| **Save/Upvote** | Bookmark and upvote courses (requires login) |
+| **My Courses** | Personal page showing saved and upvoted courses |
+| **Admin Panel** | Stats, user management, scraper control (admin-only) |
+
+## User Roles
+
+| Role | Access |
+|------|--------|
+| **Guest** | Search courses, view details, view live classes |
+| **Logged-in User** | Save/upvote courses, My Courses page |
+| **Admin** | Admin panel (stats, users, settings, scraper) |
+
+Admin access is granted to emails listed in `ADMIN_EMAILS`.
 
 ## Environment Variables Reference
 
@@ -88,27 +110,23 @@ This dramatically improves search speed (from ~3s to ~0.7s).
 | `DATABASE_URL` | Yes | PostgreSQL connection (auto-set by Railway) |
 | `SECRET_KEY` | Yes | JWT signing key (32+ chars) |
 | `ADMIN_EMAILS` | Yes | Comma-separated admin emails |
-| `RESEND_API_KEY` | Prod | For email OTP. Without it, OTPs print to logs |
-
-## Live Class Schedule
-
-The app fetches live class data from `bulletins.nyu.edu`. This works automatically with no additional setup. Classes are fetched in real-time when viewing course details.
+| `RESEND_API_KEY` | Yes | Resend API key for email OTP |
 
 ## Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
 | `pgvector` error | Run `CREATE EXTENSION vector;` in Railway PostgreSQL console |
-| Database not connecting | Check `DATABASE_URL` format (Railway may use `postgres://`, app expects `postgresql://`) |
+| Database not connecting | Check `DATABASE_URL` format (`postgres://` → `postgresql://`) |
 | First search slow (~7s) | Embedding model loads on first request; subsequent searches are fast |
-| Search results slow | Ensure HNSW index is created (see Post-Deployment Step 3) |
-| No live classes shown | Check if course code format matches NYU bulletin |
+| Search results slow | Ensure HNSW index is created (see Step 3) |
+| OTP not received | Verify `RESEND_API_KEY` and sender domain in Resend dashboard |
+| Admin page redirects | Ensure your email is in `ADMIN_EMAILS` and you're logged in |
 
 ## Monitoring
 
-Check app stats at:
 ```
-https://your-app.railway.app/admin/stats
+GET https://your-app.railway.app/admin/stats
 ```
 
 Returns:

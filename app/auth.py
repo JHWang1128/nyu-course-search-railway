@@ -39,8 +39,8 @@ def send_otp(email: str, db: Session):
 
     # Generate OTP
     otp = secrets.token_hex(3)
-    # Expires in 15 mins (UTC)
-    expires = datetime.now(timezone.utc) + timedelta(minutes=15)
+    # Expires in 15 mins - use naive UTC for consistency with DB storage
+    expires = datetime.utcnow() + timedelta(minutes=15)
     
     # Store in DB (upsert)
     token_entry = db.query(VerificationToken).filter(VerificationToken.email == email).first()
@@ -78,12 +78,11 @@ def verify_otp(email: str, otp: str, db: Session):
     token_entry = db.query(VerificationToken).filter(VerificationToken.email == email).first()
     
     if token_entry and token_entry.token == otp:
-        # Parse expiry date
-        # Postgres datetime is naive usually. UTC assumed.
-        now = datetime.now(timezone.utc).replace(tzinfo=None) # simplify comparison
+        # Use naive UTC for comparison (consistent with storage)
+        now = datetime.utcnow()
         
         expires_at = token_entry.expires_at
-        # Use simple naive comparison if both are naive
+        # Strip timezone if present for consistent comparison
         if expires_at.tzinfo:
             expires_at = expires_at.replace(tzinfo=None)
             

@@ -14,9 +14,19 @@
         <header class="flex justify-between items-center mb-8">
             <a href="/" class="text-3xl font-bold text-nyu-purple">NYU Course Search</a>
             <nav>
-                <a href="/" class="text-sm text-gray-600 hover:text-nyu-purple mr-4">← Back to Search</a>
+                <a id="backLink" href="/" class="text-sm text-gray-600 hover:text-nyu-purple mr-4">← Back to Search</a>
             </nav>
         </header>
+        <script>
+            (function () {
+                const ref = document.referrer;
+                const link = document.getElementById('backLink');
+                if (ref && ref.includes('/my-courses')) {
+                    link.href = '/my-courses';
+                    link.textContent = '← Back to My Courses';
+                }
+            })();
+        </script>
 
         <main class="max-w-3xl mx-auto">
             <div class="bg-white p-8 rounded-lg shadow-lg">
@@ -29,6 +39,8 @@
                         {% set course_id = course.id %}
                         {% set saved = is_saved %}
                         {% include 'partials/save_button.html' %}
+                        {% set upvoted = is_upvoted %}
+                        {% include 'partials/upvote_button.html' %}
                     </div>
                 </div>
 

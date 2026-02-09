@@ -29,24 +29,34 @@
             <!-- Dashboard Tab -->
             <div id="dashboard" class="tab-content">
                 <h2 class="text-3xl font-bold mb-6">Overview</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-gray-500 text-sm">Total Courses</h3>
-                        <p class="text-3xl font-bold" hx-get="/admin/stats" hx-trigger="load">Loading...</p>
+
+                <!-- Stats Cards -->
+                <div id="stats-container" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" hx-get="/admin/stats-html"
+                    hx-trigger="load" hx-swap="innerHTML">
+                    <div class="bg-white p-6 rounded-lg shadow animate-pulse">
+                        <div class="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                        <div class="h-8 bg-gray-200 rounded w-16"></div>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-gray-500 text-sm">Total Users</h3>
-                        <p class="text-3xl font-bold" hx-get="/admin/users" hx-select="count">Loading...</p>
+                    <div class="bg-white p-6 rounded-lg shadow animate-pulse">
+                        <div class="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                        <div class="h-8 bg-gray-200 rounded w-16"></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow animate-pulse">
+                        <div class="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                        <div class="h-8 bg-gray-200 rounded w-16"></div>
                     </div>
                 </div>
 
                 <div class="bg-white p-6 rounded-lg shadow">
                     <h3 class="text-xl font-bold mb-4">Actions</h3>
-                    <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" hx-post="/admin/scrape"
-                        hx-indicator="#scrape-loading">
-                        Run Scraper
-                    </button>
-                    <span id="scrape-loading" class="htmx-indicator ml-2 text-sm text-gray-500">Scraping...</span>
+                    <div class="flex gap-4 flex-wrap">
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                            hx-post="/admin/scrape" hx-indicator="#scrape-loading" hx-target="#scrape-result">
+                            Run Scraper
+                        </button>
+                        <span id="scrape-loading" class="htmx-indicator text-sm text-gray-500">Scraping...</span>
+                        <span id="scrape-result"></span>
+                    </div>
                 </div>
             </div>
 
@@ -66,10 +76,15 @@
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Admin</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Created</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200" hx-get="/admin/users" hx-trigger="load">
-                            <!-- Populated via HTMX -->
+                        <tbody class="bg-white divide-y divide-gray-200" hx-get="/admin/users-html" hx-trigger="load">
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-gray-500">Loading...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -79,7 +94,7 @@
             <div id="settings" class="tab-content hidden">
                 <h2 class="text-3xl font-bold mb-6">Configuration</h2>
                 <div class="bg-white p-6 rounded-lg shadow max-w-xl">
-                    <form hx-post="/admin/config">
+                    <form hx-post="/admin/config" hx-target="#config-result">
                         <div class="mb-4">
                             <label class="block text-gray-700 text-sm font-bold mb-2">RESEND_API_KEY</label>
                             <input type="text" name="key" value="RESEND_API_KEY" hidden>
@@ -87,8 +102,10 @@
                                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                 placeholder="re_...">
                         </div>
-                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Save
-                            Config</button>
+                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                            Save Config
+                        </button>
+                        <span id="config-result" class="ml-2"></span>
                     </form>
                 </div>
             </div>

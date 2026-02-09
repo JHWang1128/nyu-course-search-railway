@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from .database import engine, Base, get_db
-from .models import Course, User, AppConfig
+from .models import Course, User, AppConfig, SavedCourse, CourseFeedback
 from .auth import send_otp, verify_otp, get_resend_api_key
 from .scraper import scrape_catalog, fetch_details
 import os
@@ -20,12 +20,76 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+async def read_root(request: Request, db: Session = Depends(get_db)):
+    # Check if user is logged in
+    user = None
+    token = request.cookies.get("access_token")
+    if token:
+        try:
+            from jose import jwt
+            from .auth import SECRET_KEY, ALGORITHM
+            scheme, _, param = token.partition(" ")
+            payload = jwt.decode(param, SECRET_KEY, algorithms=[ALGORITHM])
+            email = payload.get("sub")
+            user = db.query(User).filter(User.email == email).first()
+        except Exception:
+            pass
+    return templates.TemplateResponse("index.html", {"request": request, "user": user})
 
 @app.get("/admin", response_class=HTMLResponse)
-async def read_admin(request: Request):
+async def read_admin(request: Request, db: Session = Depends(get_db)):
+    # Check if user is admin
+    token = request.cookies.get("access_token")
+    if not token:
+        return RedirectResponse(url="/", status_code=303)
+    
+    try:
+        from jose import jwt
+        from .auth import SECRET_KEY, ALGORITHM
+        scheme, _, param = token.partition(" ")
+        payload = jwt.decode(param, SECRET_KEY, algorithms=[ALGORITHM])
+        is_admin = payload.get("admin", False)
+        if not is_admin:
+            return RedirectResponse(url="/", status_code=303)
+    except Exception:
+        return RedirectResponse(url="/", status_code=303)
+    
     return templates.TemplateResponse("admin.html", {"request": request})
+
+@app.get("/my-courses", response_class=HTMLResponse)
+async def my_courses(request: Request, db: Session = Depends(get_db)):
+    # Require login
+    token = request.cookies.get("access_token")
+    if not token:
+        return RedirectResponse(url="/", status_code=303)
+    
+    try:
+        from jose import jwt
+        from .auth import SECRET_KEY, ALGORITHM
+        scheme, _, param = token.partition(" ")
+        payload = jwt.decode(param, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("sub")
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            return RedirectResponse(url="/", status_code=303)
+    except Exception:
+        return RedirectResponse(url="/", status_code=303)
+    
+    # Get saved courses
+    saved_courses = db.query(SavedCourse).filter(SavedCourse.user_id == user.id).all()
+    
+    # Get upvoted courses (positive feedback)
+    upvoted_courses = db.query(CourseFeedback).filter(
+        CourseFeedback.user_id == user.id,
+        CourseFeedback.is_positive == True
+    ).all()
+    
+    return templates.TemplateResponse("my_courses.html", {
+        "request": request,
+        "user": user,
+        "saved_courses": saved_courses,
+        "upvoted_courses": upvoted_courses
+    })
 
 from .embeddings import generate_query_embedding
 
@@ -73,6 +137,12 @@ def verify(request: Request, email: str = Form(...), otp: str = Form(...), db: S
     response.set_cookie(key="access_token", value=f"Bearer {token}", httponly=True)
     return response
 
+@app.get("/auth/logout")
+def logout():
+    response = RedirectResponse(url="/", status_code=303)
+    response.delete_cookie(key="access_token")
+    return response
+
 @app.post("/courses/{course_id}/save")
 def save_course(course_id: str, request: Request, db: Session = Depends(get_db)):
     # Auth check: naive cookie check or dependency
@@ -82,6 +152,8 @@ def save_course(course_id: str, request: Request, db: Session = Depends(get_db))
     
     # decode token (simple check, prod needs full verification)
     try:
+        from jose import jwt
+        from .auth import SECRET_KEY, ALGORITHM
         scheme, _, param = token.partition(" ")
         payload = jwt.decode(param, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
@@ -121,6 +193,8 @@ def upvote_course(course_id: str, request: Request, db: Session = Depends(get_db
         return templates.TemplateResponse("partials/error.html", {"request": request, "message": "Please login to upvote courses"})
     
     try:
+        from jose import jwt
+        from .auth import SECRET_KEY, ALGORITHM
         scheme, _, param = token.partition(" ")
         payload = jwt.decode(param, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
@@ -182,14 +256,35 @@ def admin_stats(db: Session = Depends(get_db)):
         "courses_with_embeddings": courses_with_embeddings
     }
 
+@app.get("/admin/stats-html", response_class=HTMLResponse)
+def admin_stats_html(request: Request, db: Session = Depends(get_db)):
+    total_courses = db.query(Course).count()
+    total_users = db.query(User).count()
+    courses_with_embeddings = db.query(Course).filter(Course.embedding.is_not(None)).count()
+    return templates.TemplateResponse("partials/admin_stats.html", {
+        "request": request,
+        "total_courses": total_courses,
+        "total_users": total_users,
+        "courses_with_embeddings": courses_with_embeddings
+    })
+
+@app.get("/admin/users-html", response_class=HTMLResponse)
+def admin_users_html(request: Request, db: Session = Depends(get_db)):
+    users = db.query(User).all()
+    return templates.TemplateResponse("partials/admin_users.html", {
+        "request": request,
+        "users": users
+    })
+
 @app.get("/course/{course_id}", response_class=HTMLResponse)
 def get_course_detail(course_id: str, request: Request, db: Session = Depends(get_db)):
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     
-    # Check if user has saved this course
+    # Check if user has saved/upvoted this course
     is_saved = False
+    is_upvoted = False
     token = request.cookies.get("access_token")
     if token:
         try:
@@ -200,10 +295,14 @@ def get_course_detail(course_id: str, request: Request, db: Session = Depends(ge
             email = payload.get("sub")
             user = db.query(User).filter(User.email == email).first()
             if user:
-                from .models import SavedCourse
                 is_saved = db.query(SavedCourse).filter(
                     SavedCourse.user_id == user.id, 
                     SavedCourse.course_id == course_id
+                ).first() is not None
+                is_upvoted = db.query(CourseFeedback).filter(
+                    CourseFeedback.user_id == user.id,
+                    CourseFeedback.course_id == course_id,
+                    CourseFeedback.is_positive == True
                 ).first() is not None
         except Exception:
             pass
@@ -211,7 +310,8 @@ def get_course_detail(course_id: str, request: Request, db: Session = Depends(ge
     return templates.TemplateResponse("course_detail.html", {
         "request": request, 
         "course": course,
-        "is_saved": is_saved
+        "is_saved": is_saved,
+        "is_upvoted": is_upvoted
     })
 
 @app.post("/admin/scrape")

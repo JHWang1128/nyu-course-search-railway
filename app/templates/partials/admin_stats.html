@@ -1,0 +1,16 @@
+<div class="bg-white p-6 rounded-lg shadow">
+    <h3 class="text-gray-500 text-sm mb-1">Total Courses</h3>
+    <p class="text-3xl font-bold text-nyu-purple">{{ "{:,}".format(total_courses) }}</p>
+</div>
+<div class="bg-white p-6 rounded-lg shadow">
+    <h3 class="text-gray-500 text-sm mb-1">Total Users</h3>
+    <p class="text-3xl font-bold text-blue-600">{{ total_users }}</p>
+</div>
+<div class="bg-white p-6 rounded-lg shadow">
+    <h3 class="text-gray-500 text-sm mb-1">Courses with Embeddings</h3>
+    <p class="text-3xl font-bold text-green-600">{{ "{:,}".format(courses_with_embeddings) }}</p>
+    {% if total_courses > 0 %}
+    <p class="text-xs text-gray-400 mt-1">{{ "%.1f"|format(courses_with_embeddings / total_courses * 100) }}% complete
+    </p>
+    {% endif %}
+</div>
