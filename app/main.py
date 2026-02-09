@@ -3,13 +3,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
-from .database import engine, Base, get_db
+from .database import engine, Base, get_db, init_extensions
 from .models import Course, User, AppConfig, SavedCourse, CourseFeedback
 from .auth import send_otp, verify_otp, get_resend_api_key
 from .scraper import scrape_catalog, fetch_details
 import os
 
-# Create tables
+# Create extensions and tables
+init_extensions()
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
