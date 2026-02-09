@@ -1,0 +1,23 @@
+<div class="p-4 mb-4 text-sm text-green-700 bg-green-100 rounded-lg" role="alert">
+    <span class="font-medium">Success!</span> {{ message }}
+    {% if request.url.path == '/auth/login' %}
+    <br>
+    <form hx-post="/auth/verify" hx-target="#loginMsg" class="mt-4">
+        <input type="hidden" name="email" value="{{ request._form.get('email') }}">
+        <!-- Need to persist email? Or ask user to re-enter? Better to have a separate inputs -->
+        <!-- Actually, the current modal flow might need adjustment. Let's just say "Check email" and maybe switch to verify form -->
+    </form>
+    {% endif %}
+</div>
+<!-- Detailed flow:
+1. Login form -> Returns "OTP Sent" + Replaces form with Verify Form?
+2. Verify form -> Returns Redirect (handled by HTMX or browser?)
+-->
+<div id="verifyForm">
+    <p class="mb-2">Enter the code sent to your email:</p>
+    <form hx-post="/auth/verify" hx-target="body">
+        <input type="email" name="email" placeholder="Email" class="w-full p-2 border rounded mb-2" required>
+        <input type="text" name="otp" placeholder="OTP Code" class="w-full p-2 border rounded mb-4" required>
+        <button type="submit" class="w-full bg-nyu-purple text-white py-2 rounded">Verify & Login</button>
+    </form>
+</div>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - NYU Course Search</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-900">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-nyu-purple text-white p-6">
+            <h1 class="text-2xl font-bold mb-8">Admin</h1>
+            <nav class="space-y-4">
+                <a href="#" class="block hover:bg-white/10 p-2 rounded" onclick="showTab('dashboard')">Dashboard</a>
+                <a href="#" class="block hover:bg-white/10 p-2 rounded" onclick="showTab('users')">Users</a>
+                <a href="#" class="block hover:bg-white/10 p-2 rounded" onclick="showTab('settings')">Settings</a>
+            </nav>
+            <div class="mt-8 pt-8 border-t border-white/20">
+                <a href="/" class="block hover:text-gray-300">← Back to App</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-content">
+                <h2 class="text-3xl font-bold mb-6">Overview</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-gray-500 text-sm">Total Courses</h3>
+                        <p class="text-3xl font-bold" hx-get="/admin/stats" hx-trigger="load">Loading...</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-gray-500 text-sm">Total Users</h3>
+                        <p class="text-3xl font-bold" hx-get="/admin/users" hx-select="count">Loading...</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-bold mb-4">Actions</h3>
+                    <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" hx-post="/admin/scrape"
+                        hx-indicator="#scrape-loading">
+                        Run Scraper
+                    </button>
+                    <span id="scrape-loading" class="htmx-indicator ml-2 text-sm text-gray-500">Scraping...</span>
+                </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div id="users" class="tab-content hidden">
+                <h2 class="text-3xl font-bold mb-6">User Management</h2>
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Email</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Verified</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" hx-get="/admin/users" hx-trigger="load">
+                            <!-- Populated via HTMX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content hidden">
+                <h2 class="text-3xl font-bold mb-6">Configuration</h2>
+                <div class="bg-white p-6 rounded-lg shadow max-w-xl">
+                    <form hx-post="/admin/config">
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">RESEND_API_KEY</label>
+                            <input type="text" name="key" value="RESEND_API_KEY" hidden>
+                            <input type="password" name="value"
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                placeholder="re_...">
+                        </div>
+                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Save
+                            Config</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+        }
+    </script>
+</body>
+
+</html>

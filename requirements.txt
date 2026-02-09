@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg[binary]
+pgvector
+redis
+beautifulsoup4
+httpx
+sentence-transformers
+jinja2
+python-multipart
+python-jose[cryptography]
+resend
+pydantic-settings
+alembic
+einops

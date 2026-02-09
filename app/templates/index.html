@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYU Course Search - Find Your Perfect Classes</title>
+    <meta name="description" content="Search NYU courses using natural language. Powered by AI semantic search.">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="header sticky top-0 z-50 py-4">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <a href="/" class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-nyu-gradient rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-xl">N</span>
+                </div>
+                <h1 class="text-2xl font-bold text-nyu-purple">NYU Course Search</h1>
+            </a>
+            <nav class="flex items-center gap-4">
+                <a href="/admin" class="text-sm text-gray-600 hover:text-nyu-purple transition-colors">Admin</a>
+                <button id="loginBtn" class="btn-primary text-sm">Login</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <main class="container mx-auto px-4 py-12">
+        <div class="max-w-3xl mx-auto text-center mb-12">
+            <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">
+                Find Your Perfect
+                <span class="text-nyu-purple">NYU Courses</span>
+            </h2>
+            <p class="text-lg text-gray-600 mb-8">
+                Search across 17,000+ courses using natural language.
+                Powered by AI semantic search.
+            </p>
+
+            <!-- Search Input -->
+            <div class="relative">
+                <input type="text" id="searchInput" name="q"
+                    placeholder="Try 'machine learning for beginners' or 'creative writing workshops'..."
+                    class="search-input w-full pr-14" hx-get="/search" hx-trigger="keyup changed delay:400ms"
+                    hx-target="#results" hx-indicator="#searchSpinner">
+                <div id="searchSpinner" class="htmx-indicator absolute right-4 top-1/2 transform -translate-y-1/2">
+                    <svg class="animate-spin h-6 w-6 text-nyu-purple" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Quick filters -->
+            <div class="flex flex-wrap justify-center gap-2 mt-6">
+                <button onclick="setSearch('data science')"
+                    class="badge badge-purple hover:bg-purple-200 cursor-pointer transition-colors">Data
+                    Science</button>
+                <button onclick="setSearch('machine learning')"
+                    class="badge badge-purple hover:bg-purple-200 cursor-pointer transition-colors">Machine
+                    Learning</button>
+                <button onclick="setSearch('creative writing')"
+                    class="badge badge-purple hover:bg-purple-200 cursor-pointer transition-colors">Creative
+                    Writing</button>
+                <button onclick="setSearch('economics')"
+                    class="badge badge-purple hover:bg-purple-200 cursor-pointer transition-colors">Economics</button>
+                <button onclick="setSearch('computer graphics')"
+                    class="badge badge-purple hover:bg-purple-200 cursor-pointer transition-colors">Computer
+                    Graphics</button>
+            </div>
+        </div>
+
+        <!-- Results Container -->
+        <div id="results" class="max-w-3xl mx-auto space-y-4">
+            <!-- Default state -->
+            <div class="text-center py-12 text-gray-500">
+                <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <p>Start typing to search courses...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 modal-overlay hidden flex items-center justify-center z-50">
+        <div class="modal-content p-8 w-full max-w-md mx-4 animate-fadeInUp">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Login to NYU Course Search</h2>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <p class="text-gray-600 mb-6">Enter your NYU email to receive a one-time login code.</p>
+            <form hx-post="/auth/login" hx-target="#loginMsg" hx-swap="innerHTML">
+                <input type="email" name="email" placeholder="netid@nyu.edu" class="form-input mb-4"
+                    pattern=".+@nyu\.edu$" title="Please use your @nyu.edu email" required>
+                <button type="submit" class="btn-primary w-full">Send Login Code</button>
+            </form>
+            <div id="loginMsg" class="mt-4"></div>
+        </div>
+    </div>
+
+    <script>
+        // Modal controls
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            document.getElementById('loginModal').classList.remove('hidden');
+        });
+
+        function closeModal() {
+            document.getElementById('loginModal').classList.add('hidden');
+        }
+
+        // Quick search buttons
+        function setSearch(query) {
+            const input = document.getElementById('searchInput');
+            input.value = query;
+            input.dispatchEvent(new Event('keyup', { bubbles: true }));
+        }
+
+        // Close modal on escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // Close modal on backdrop click
+        document.getElementById('loginModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeModal();
+        });
+    </script>
+</body>
+
+</html>
