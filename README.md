@@ -49,9 +49,17 @@ uv run uvicorn app.main:app --reload --port 8000
 Then populate data:
 1. Scrape courses: `curl -X POST http://localhost:8000/admin/scrape`
 2. Generate embeddings: `uv run python -m scripts.generate_embeddings`
-3. Create search index: `psql nyucourses -c "CREATE INDEX courses_embedding_idx ON courses USING hnsw (embedding vector_cosine_ops);"`
+3. Create search index:
+   ```bash
+   # Local (HNSW — faster, needs more memory)
+   psql nyucourses -c "CREATE INDEX courses_embedding_idx ON courses USING hnsw (embedding vector_cosine_ops);"
+   # Railway (IVFFlat — works on free tier)
+   psql "YOUR_RAILWAY_URL" -c "CREATE INDEX courses_embedding_idx ON courses USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);"
+   ```
 
-See [LOCAL.md](LOCAL.md) for detailed local setup and [REMOTE.md](REMOTE.md) for Railway deployment.
+For Railway deployment, you can dump your local DB and restore it directly — see [REMOTE.md](REMOTE.md).
+
+See [LOCAL.md](LOCAL.md) for detailed local setup.
 
 ## Environment Variables
 

@@ -73,14 +73,26 @@ railway run python -m scripts.generate_embeddings
 
 Takes 30-60 minutes for all courses.
 
-### Step 3: Create Vector Index
+### Step 3: Upload Local Database (Recommended)
 
-In Railway PostgreSQL Query tab:
-```sql
-CREATE INDEX courses_embedding_idx ON courses USING hnsw (embedding vector_cosine_ops);
+Instead of scraping and generating embeddings on Railway, dump your local DB and restore:
+
+```bash
+# Dump local database
+pg_dump -Fc nyucourses > nyucourses.dump
+
+# Restore to Railway (get URL from Railway → PostgreSQL → Variables)
+pg_restore --no-owner --no-acl -d "YOUR_RAILWAY_DATABASE_URL" nyucourses.dump
 ```
 
-This improves search speed from ~3s to ~0.7s.
+### Step 4: Create Vector Index
+
+The HNSW index requires too much shared memory for Railway's free tier. Use IVFFlat instead:
+
+```bash
+psql "YOUR_RAILWAY_DATABASE_URL" \
+  -c "CREATE INDEX courses_embedding_idx ON courses USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);"
+```
 
 ## Features
 
@@ -119,6 +131,7 @@ Admin access is granted to emails listed in `ADMIN_EMAILS`.
 | `pgvector` error | Run `CREATE EXTENSION vector;` in Railway PostgreSQL console |
 | Database not connecting | Check `DATABASE_URL` format (`postgres://` → `postgresql://`) |
 | First search slow (~7s) | Embedding model loads on first request; subsequent searches are fast |
+| HNSW index fails | Use IVFFlat index instead (see Step 4) — Railway free tier has limited shared memory |
 | Search results slow | Ensure HNSW index is created (see Step 3) |
 | OTP not received | Verify `RESEND_API_KEY` and sender domain in Resend dashboard |
 | Admin page redirects | Ensure your email is in `ADMIN_EMAILS` and you're logged in |

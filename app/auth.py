@@ -13,6 +13,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "dev_secret")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 ADMIN_EMAILS = os.getenv("ADMIN_EMAILS", "").split(",")
+FROM_EMAIL = os.getenv("FROM_EMAIL", "NYU Course Search <noreply@mychartexplorer.com>")
 
 def get_resend_api_key(db: Session):
     # Check env var first
@@ -63,7 +64,7 @@ def send_otp(email: str, db: Session):
     resend.api_key = api_key
     try:
         r = resend.Emails.send({
-            "from": "NYU Course Search <onboarding@resend.dev>",
+            "from": FROM_EMAIL,
             "to": email,
             "subject": "Your Login OTP",
             "html": f"<p>Your login code is: <strong>{otp}</strong></p><p>It expires in 15 minutes.</p>"
